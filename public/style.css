@@ -1,0 +1,24 @@
+/* custom.css */
+.sidebar {
+    /* Ensure the sidebar is positioned on the left */
+    background-color: aqua;
+    left: 0;
+    right: auto;
+}
+/* #bolu {
+    background-color: rgb(80, 79, 79);
+} */
+#bolu:hover {
+    background-color: rgb(63, 63, 63); /* Background color on hover */
+  }
+#side-view-title {
+    visibility: hidden;
+}
+#drop-delete {
+    color: red;
+}
+.element-sidebar {
+    position: absolute;
+    left: 0;
+    right: auto;
+}
