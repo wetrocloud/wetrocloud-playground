@@ -35,6 +35,7 @@ pip install -r requirements.txt
 2. Set up your environment variables:
 ```bash
 OPENAI_API_KEY=your_api_key_here
+OPENAI_BASE_URL=base_url
 ```
 
 3. Run the application:

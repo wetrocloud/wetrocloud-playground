@@ -3,10 +3,9 @@ import chainlit as cl
 from chainlit.data.base import BaseDataLayer
 from chainlit.input_widget import Select, Switch, Slider
 import requests
+from decouple import config
 
-# env = cl.user_session.get("env")
-
-client = AsyncOpenAI(base_url="http://127.0.0.1:8001/v1/openai")
+client = AsyncOpenAI(base_url=config('OPENAI_BASE_URL'))
 
 
 MODEL_LISTS = [
