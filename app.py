@@ -3,15 +3,26 @@ import chainlit as cl
 from chainlit.data.base import BaseDataLayer
 from chainlit.input_widget import Select, Switch, Slider
 import requests
+import boto3
+import base64
+from datetime import datetime
+from botocore.exceptions import NoCredentialsError
 from decouple import config
+
+
+AWS_ACCESS_KEY = config('AWS_ACCESS_KEY')
+AWS_SECRET_KEY = config('AWS_SECRET_KEY')
+BUCKET_NAME = config('BUCKET_NAME')
+REGION = config('REGION')
 
 client = AsyncOpenAI(base_url=config('OPENAI_BASE_URL'))
 
 
 MODEL_LISTS = [
     "llama-3.3-70b","gpt-4.5-preview","claude-3-7-sonnet-20250219","deepseek-r1-distill-qwen-32b","qwen-2.5-32b","mixtral-8x7b-32768"
-    "deepseek-r1-distill-llama-70b","claude-3-5-sonnet-20240620","gpt-4","gpt-3.5-turbo","o3-mini","o1-mini","o1","o1-preview","gemma2-9b-it"
+    "deepseek-r1-distill-llama-70b","claude-3-5-sonnet-20240620","gpt-4o","gpt-4","gpt-3.5-turbo","o3-mini","o1-mini","o1","o1-preview","gemma2-9b-it"
 ]
+IMAGE_MODELS = ["gpt-4o"]
 
 @cl.set_starters
 async def set_starters():
@@ -39,7 +50,6 @@ async def set_starters():
             )
         ]
 
-
 @cl.on_chat_start
 async def start():
     cl.user_session.set("messages", [])
@@ -63,30 +73,93 @@ You can click the Settings button to try out different models and customize your
 async def update_settings(settings):
     cl.user_session.set("model", settings["Model"])
 
-async def call_wetrocloud(query: cl.Message, model="llama-3.3-70b"):
+async def call_wetrocloud(query: cl.Message,files, model="llama-3.3-70b"):
 
     messages = cl.user_session.get("messages")
     model = cl.user_session.get("model")
-    messages.append(
-        {"role": "user", "content": query.content})
+    error = False
+    if files == None:
+        messages.append(
+            {"role": "user", "content": query.content})
+    else:
+        if model in IMAGE_MODELS:
+            content = [{"type":"text","text":query.content}]
+            for file in files:
+                item = {"type":"image_url","image_url":{"url":file}}
+                content.append(item)
+            messages.append({"role": "user", "content": content})
+        else:
+            error = True
+            messages.append({"role": "user", "content": query.content})
     
-    msg = cl.Message(content="", author="Wetrocloud")
-    stream = await client.chat.completions.create(
-        model=model,
-        messages=messages,
-        stream=True,
-    )
+    if error == False:
+        msg = cl.Message(content="", author="Wetrocloud")
+        stream = await client.chat.completions.create(
+            model=model,
+            messages=messages,
+            stream=True,
+        )
 
-    await msg.send()
-    async for part in stream:
-        if part.choices != []:
-            if token := part.choices[0].delta.content or "":
-                await msg.stream_token(token)
+        await msg.send()
+        async for part in stream:
+            if part.choices != []:
+                if token := part.choices[0].delta.content or "":
+                    await msg.stream_token(token)
+        messages.append({"role": "assistant", "content": msg.content})
+    else:
+        m = f"Unfortunately `{model}` doesn't support images, try selecting `gpt-4o` in settings"
+        await cl.Message(content=m, author="Wetrocloud").send()
+        messages.append({"role": "assistant", "content": m})
     
-    messages.append({"role": "assistant", "content": msg.content})
+    
     cl.user_session.set("messages", messages)
+
+def upload_to_s3(file_name, object_name=None):
+    """
+    Uploads a file to an S3 bucket and returns the public URL.
+    :param file_name: File to upload
+    :param bucket_name: S3 bucket name
+    :param object_name: S3 object name (if not specified, file_name is used)
+    :param region: AWS region
+    :return: Public URL of the uploaded file
+    """
+    if object_name is None:
+        object_name = file_name
+
+    date_prefix = datetime.now().strftime('%Y-%m-%d')
+    object_name = f"{date_prefix}/{object_name}"
+    region = REGION
+    s3_client = boto3.client('s3', 
+                             region_name=region, 
+                             aws_access_key_id=AWS_ACCESS_KEY, 
+                             aws_secret_access_key=AWS_SECRET_KEY)
+    bucket_name = BUCKET_NAME
+    try:
+        s3_client.upload_file(file_name, bucket_name, object_name)
+        url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{object_name}"
+        print(f"File uploaded successfully: {url}")
+        return url
+    except NoCredentialsError:
+        print("Credentials not available.")
+        return None
+
+def get_path(file_path,mime):
+    # Open the image file in binary mode
+    with open(file_path, "rb") as image_file:
+        # Convert the image to base64
+        encoded_string = base64.b64encode(image_file.read()).decode("utf-8")
+    # Create the data URL
+    image_url = f"data:image/jpeg;base64,{encoded_string}"
+    return image_url
 
 @cl.on_message
 async def chat(message: cl.Message):
-    await call_wetrocloud(message)
+    print(message.elements)
+    files = None
+    if message.elements != []:
+        files = []
+        for image in message.elements: 
+            url = get_path(image.path,image.mime)
+            files.append(url)
+    await call_wetrocloud(message,files)
 
