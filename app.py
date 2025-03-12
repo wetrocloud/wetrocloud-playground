@@ -9,12 +9,6 @@ from datetime import datetime
 from botocore.exceptions import NoCredentialsError
 from decouple import config
 
-
-AWS_ACCESS_KEY = config('AWS_ACCESS_KEY')
-AWS_SECRET_KEY = config('AWS_SECRET_KEY')
-BUCKET_NAME = config('BUCKET_NAME')
-REGION = config('REGION')
-
 client = AsyncOpenAI(base_url=config('OPENAI_BASE_URL'))
 
 
@@ -113,35 +107,6 @@ async def call_wetrocloud(query: cl.Message,files, model="llama-3.3-70b"):
     
     
     cl.user_session.set("messages", messages)
-
-def upload_to_s3(file_name, object_name=None):
-    """
-    Uploads a file to an S3 bucket and returns the public URL.
-    :param file_name: File to upload
-    :param bucket_name: S3 bucket name
-    :param object_name: S3 object name (if not specified, file_name is used)
-    :param region: AWS region
-    :return: Public URL of the uploaded file
-    """
-    if object_name is None:
-        object_name = file_name
-
-    date_prefix = datetime.now().strftime('%Y-%m-%d')
-    object_name = f"{date_prefix}/{object_name}"
-    region = REGION
-    s3_client = boto3.client('s3', 
-                             region_name=region, 
-                             aws_access_key_id=AWS_ACCESS_KEY, 
-                             aws_secret_access_key=AWS_SECRET_KEY)
-    bucket_name = BUCKET_NAME
-    try:
-        s3_client.upload_file(file_name, bucket_name, object_name)
-        url = f"https://{bucket_name}.s3.{region}.amazonaws.com/{object_name}"
-        print(f"File uploaded successfully: {url}")
-        return url
-    except NoCredentialsError:
-        print("Credentials not available.")
-        return None
 
 def get_path(file_path,mime):
     # Open the image file in binary mode
