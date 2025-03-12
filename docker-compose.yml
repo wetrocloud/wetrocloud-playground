@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  wetrocloud-playground:
+    build: .
+    ports:
+      - "80:8000"
+    volumes:
+      - .:/app
+    environment:
+      - CHAINLIT_PORT=8000
+    command: ["chainlit", "run", "app.py", "--watch", "--host", "0.0.0.0", "--port", "8000"]
