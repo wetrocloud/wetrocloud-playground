@@ -22,3 +22,6 @@
     left: 0;
     right: auto;
 }
+.watermark{
+    display: none !important;
+}
