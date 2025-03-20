@@ -17,7 +17,7 @@ MODEL_LISTS = [
     "deepseek-r1-distill-llama-70b","claude-3-5-sonnet-20240620","gpt-4","gpt-3.5-turbo","o3-mini","o1-mini","o1","o1-preview","gemma2-9b-it"
 ]
 IMAGE_MODELS = ["gpt-4o"]
-REASON_MODELS = ["deepseek-r1-distill-qwen-32","deepseek-r1-distill-llama-70b"]
+REASON_MODELS = ["deepseek-r1-distill-qwen-32b","deepseek-r1-distill-llama-70b"]
 
 # @cl.set_starters
 # async def set_starters():
@@ -103,6 +103,7 @@ async def call_wetrocloud(query: cl.Message,files, model="llama-3.3-70b"):
                 async for part in stream:
                     if part.choices != []:
                         if token := part.choices[0].delta.content or "":
+                            print(token,end="\n")
                             if token == "<think>":
                                 reasoning_mode = True
                             elif token == "</think>":
