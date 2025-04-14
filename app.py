@@ -13,7 +13,11 @@ client = AsyncOpenAI(base_url=config('OPENAI_BASE_URL'))
 
 
 MODEL_LISTS = [
-    "llama-3.3-70b","gpt-4o",
+    "llama-3.3-70b",
+    "gpt-4.1-nano",
+    "gpt-4.1-mini-2025-04-14",
+    "meta-llama/llama-4-scout-17b-16e-instruct",
+    "meta-llama/llama-4-maverick-17b-128e-instruct",
     "claude-3-7-sonnet-20250219",
     "deepseek-r1-distill-qwen-32b",
     "qwen-2.5-32b",
@@ -21,14 +25,13 @@ MODEL_LISTS = [
     "deepseek-r1-distill-llama-70b",
     "claude-3-5-sonnet-20240620",
     "gpt-4",
+    "gpt-4o",
     "gpt-3.5-turbo",
     "o3-mini",
     "o1-mini",
     "o1",
     "o1-preview",
-    "gemma2-9b-it",
-    "meta-llama/llama-4-scout-17b-16e-instruct",
-    "meta-llama/llama-4-maverick-17b-128e-instruct"
+    "gemma2-9b-it"
 ]
 IMAGE_MODELS = ["gpt-4o"]
 REASON_MODELS = ["deepseek-r1-distill-qwen-32b","deepseek-r1-distill-llama-70b"]
